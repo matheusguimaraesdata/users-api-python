@@ -83,28 +83,7 @@ http://127.0.0.1:8000/docs
 ## 🏛️Arquitetura
 
 ### Visão Geral
-
-flowchart LR
-subgraph Clients["Clientes / Consumidores"]
-Swagger["Swagger UI (/docs)"]
-ExtClient["Aplicações externas\n(cURL / Postman / Scripts)"]
-ETL["Pipeline ETL (projeto separado)\nCSV + IA"]
-end
-
-subgraph Cloud["Railway (Produção)"]
-Router["Railway Router / Proxy\nHTTPS → $PORT"]
-API["FastAPI Users API\n(main.py)"]
-MemDB["In-memory Store\n(database_fake)\n(para MVP/estudo)"]
-end
-
-Swagger -->|HTTP GET/POST/PUT| Router
-ExtClient -->|HTTP GET/POST/PUT| Router
-ETL -->|GET /usuario/id\nPUT /usuario/id| Router
-
-Router --> API
-API --> MemDB
-MemDB --> API
-
+![Arquitetura da API](docs/diagramas/Arquitetura%20-%20Visão%20Geral.svg)
 #### Leitura rápida do diagrama:
 
     • O Railway recebe HTTPS, encaminha para a porta dinâmica ($PORT) e entrega na FastAPI.
@@ -112,26 +91,7 @@ MemDB --> API
     • A persistência, por enquanto, é um “banco” em memória (database_fake) — suficiente para o desafio e para o ETL.
 
 ### Fluxo de Requisições:
-
-sequenceDiagram
-participant C as Cliente (Swagger/Postman/ETL)
-participant R as Railway Router
-participant A as FastAPI Users API
-participant D as database_fake (memória)
-
-C->>R: HTTP Request (ex: GET /usuario/4)
-R->>A: Forward request to $PORT
-A->>D: Buscar usuário por ID
-D-->>A: Dados do usuário
-A-->>R: 200 OK + JSON
-R-->>C: 200 OK + JSON
-
-C->>R: PUT /usuario/4 (usuário atualizado com nova news)
-R->>A: Forward request to $PORT
-A->>D: Persistir usuário atualizado
-D-->>A: OK
-A-->>R: 200 OK + JSON atualizado
-R-->>C: 200 OK + JSON atualizado
+![Fluxo de Requisições](docs/diagramas/Fluxo%20de%20Requisições.svg)
 
 ## ⭐Diferenciais Técnicos
 
