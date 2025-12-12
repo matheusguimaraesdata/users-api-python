@@ -1,7 +1,7 @@
-from ast import Num
+
 from typing import List, Dict
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 #=====================================================
 # MODELOS DE DOMÍNIO (Pydantic)
@@ -34,9 +34,16 @@ class Usuario(BaseModel):
   nome: str
   conta: Conta
   cartao: Cartao
-  recurso: List[Recurso] = []
-  news: List[News] = []
+  recurso: List[Recurso] = Field(default_factory=list)
+  news: List[News] = Field(default_factory=list)
 
+# Modelo de uso para o POST (sem id)
+class CreateUsuario(BaseModel):
+  nome: str
+  conta: Conta
+  cartao: Cartao
+  recurso: List[Recurso] = Field(default_factory=list)
+  news: List[News] = Field(default_factory=list)
 #==============================================
 # "BANCO DE DADOS" em memória
 #==============================================
@@ -109,48 +116,74 @@ database_fake: Dict[int, Usuario] = {
 #============================================================================
 
 app = FastAPI(
-    titulo = "Projeto Santander DIO 2025 - API com Python",
-    descricao = "API de usuários, contas, cartões, features e news para o pipeline ETL com IA.",
-    versao = "1.0.0",
+    title= "Projeto Santander DIO 2025 - Users API com Python",
+    description= "API de usuários, contas, cartões, features e news para o pipeline ETL com IA.",
+    version= "1.0.0",
 )
 
 @app.get("/")
 def root():
-  return {"status": "API online no Railway. Acesse /docs"}
-@app.get("/")
-def read_root():
-  return {"message": "API Santander Dev Week 2023 em Python está online. Acesse /docs para a documentação."}
+  return {"status": "API online no Railway. Acesse /docs para ter acesso ao Swagger"}
 
-@app.get("/usuario/{id_de_usuario}", response_model=Usuario)
 
-def get_usuarios(id_de_usuario: int):
-  """
-  Retorna um usuário pelo ID.
-  """
-  usuario = database_fake.get(id_de_usuario)
-  if not usuario:
-    raise HTTPException(status_code=404, detail="Usuário não encontrado")
-  return usuario
-
-@app.put("/usuario/{id_de_usuario}", response_model = Usuario)
-def update_de_usuario(id_de_usuario: int, usuario: Usuario):
-  """
-  Atualiza o usuário completo.
-  """
-  if id_de_usuario != usuario.id:
-    raise HTTPException(
-        status_code=400, detail="O ID da URL diferente do ID enviado no corpo."
-    )
-
-  if id_de_usuario not in database_fake:
-    raise HTTPException(status_code=404, detail="Usuário não encontrado")
-
-  database_fake[id_de_usuario] = usuario
-  return usuario
+#===============================================================================
+# ENDPOINTS DE USUARIOS
+#===============================================================================
 
 @app.get("/usuario", response_model=List[Usuario])
 def lista_usuarios():
-  """
-  Retorna todos os usuários (apenas teste).
-  """
-  return list(database_fake.values())
+    """
+    Retorna todos os usuários.
+    """
+    return list(database_fake.values())
+
+
+@app.get("/usuario/{id_de_usuario}", response_model=Usuario)
+def get_usuarios_by_id(id_de_usuario: int):
+    """
+    Retorna um usuário pelo ID.
+    """
+    usuario = database_fake.get(id_de_usuario)
+    if not usuario:
+      raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return usuario
+
+
+@app.post("/usuario",response_model=Usuario, status_code=201)
+def create_usuario(usuario_data: CreateUsuario):
+    """
+    Cria um novo usuário e retorna usuário criado
+    """
+    novo_id = max(database_fake.keys(), default = 0) + 1
+    novo_usuario = Usuario(
+      id=novo_id,
+      nome=usuario_data.nome,
+      conta=usuario_data.conta,
+      cartao=usuario_data.cartao,
+      recurso=usuario_data.recurso,
+      news=usuario_data.news
+    )
+    
+    database_fake[novo_id] = novo_usuario
+    return novo_usuario
+  
+
+@app.put("/usuario/{id_de_usuario}", response_model = Usuario)
+def update_de_usuario(id_de_usuario: int, usuario: Usuario):
+    """
+    Atualiza o usuário completo.
+    """
+    if id_de_usuario != usuario.id:
+      raise HTTPException(status_code=400, detail="O ID da URL diferente do ID enviado no corpo.")
+
+    if id_de_usuario not in database_fake:
+      raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    database_fake[id_de_usuario] = usuario
+    return usuario
+
+
+
+
+
+#
