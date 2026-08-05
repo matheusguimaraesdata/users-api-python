@@ -2,14 +2,14 @@
 
 API REST em Python para gerenciar usuários, contas, cartões e notificações, com persistência real em banco relacional e uma camada de analytics em cima dos próprios dados.
 
-Comecei esse projeto no Bootcamp Santander (DIO) como um desafio de API simples com dados em memória. Depois resolvi evoluir para algo mais próximo do que se vê em produção: banco de dados de verdade, modelagem relacional, testes automatizados e um endpoint de análise de dados com Pandas —.
+Comecei esse projeto no Bootcamp Santander (DIO) como um desafio de API simples com dados em memória. Depois resolvi evoluir para algo mais próximo do que se vê em produção: banco de dados de verdade, modelagem relacional, testes automatizados e um endpoint de análise de dados com Pandas.
 
 ## O que a API faz
 
 - CRUD completo de usuários (GET, POST, PUT, PATCH, DELETE)
 - Autenticação via JWT — leitura é pública, escrita exige login
 - Paginação e filtro por nome na listagem
-- Modelagem relacional com chaves estrangeiras (não mais objetos soltos em memória)
+- Modelagem relacional com chaves estrangeiras
 - Persistência em SQLite local / Postgres em produção
 - Analytics com Pandas: média, mediana, desvio padrão, distribuição por faixa de limite, contas negativas, correlação saldo×limite, ranking dos maiores/menores saldos
 - Exportação da base em CSV
@@ -59,7 +59,7 @@ curl -X POST http://localhost:8000/auth/login -d "username=admin&password=admin1
 curl -X DELETE http://localhost:8000/usuario/1 -H "Authorization: Bearer <token>"
 ```
 
-O usuário administrador (`admin` / `admin123` por padrão) é criado automaticamente no primeiro boot. Essas credenciais e a `SECRET_KEY` usada para assinar o token são só para rodar localmente sem configuração — em qualquer ambiente que não seja a sua própria máquina, defina `ADMIN_USERNAME`, `ADMIN_PASSWORD` e `SECRET_KEY` como variáveis de ambiente antes de subir.
+O usuário administrador (`admin` / `admin123` por padrão) é criado automaticamente no primeiro boot. Essas credenciais e a `SECRET_KEY` usada para assinar o token são só para rodar localmente sem configuração, em qualquer ambiente que não seja a sua própria máquina, defina `ADMIN_USERNAME`, `ADMIN_PASSWORD` e `SECRET_KEY` como variáveis de ambiente antes de subir.
 
 ## Rodando localmente
 
@@ -138,7 +138,7 @@ Comecei com tudo num `main.py` só (dado fake em dicionário Python, sem persist
 </p>
 </div>
 
-# Atualizações possíveis (Futuramente)
+## Atualizações possíveis (Futuramente)
 
 - Autenticação por perfil (hoje é um único usuário admin — não tem controle por papel/permissão)
 - Endpoint de analytics com série temporal (hoje as tabelas não guardam data de criação, então não dá pra ver evolução no tempo)
