@@ -128,7 +128,7 @@ Dockerfile
 
 Comecei com tudo num `main.py` só (dado fake em dicionário Python, sem persistência). Reestruturei em camadas — routers separados de modelos, modelos separados de acesso a banco — depois de perceber que isso ia ficar difícil de manter conforme eu fosse adicionando funcionalidade.
 
-<div>
+<div align="center">
 <p align="center">
   <img src="docs/diagramas/arquitetura_preview.png" alt="Arquitetura da API" style="border-radius: 12px;" width: 50%; />
 </p>
@@ -136,7 +136,7 @@ Comecei com tudo num `main.py` só (dado fake em dicionário Python, sem persist
 <p align="center">
   <img src="docs/diagramas/fluxo_preview.png" alt="Fluxo de Requisições" style="border-radius: 12px;" width: 70%; />
 </p>
-
+</div>
 
 # Atualizações possíveis (Futuramente)
 
@@ -146,7 +146,7 @@ Comecei com tudo num `main.py` só (dado fake em dicionário Python, sem persist
 
 ## Stack
 
-<p align="left">
+<div align="center">
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/SQLModel-E92063?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLModel" />
@@ -160,4 +160,4 @@ Comecei com tudo num `main.py` só (dado fake em dicionário Python, sem persist
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="Swagger" />
   <img src="https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white" alt="Railway" />
-</p>
+</div>
