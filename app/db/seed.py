@@ -1,5 +1,8 @@
 from sqlmodel import Session, select
 
+from app.core.config import settings
+from app.core.security import hash_password
+from app.models.auth import AuthUser
 from app.models.usuario import Cartao, Conta, News, Usuario
 
 ICONE_CREDITO = "https://digitalinnovationone.github.io/santander-dev-week-2023-api/icons/credit.svg"
@@ -47,4 +50,23 @@ def seed_if_empty(session: Session) -> None:
             news=[News(**n) for n in item["news"]],
         )
         session.add(usuario)
+    session.commit()
+
+
+def seed_admin_if_empty(session: Session) -> None:
+    """Cria o usuário administrador padrão (login da API) se ainda não existir.
+
+    Credenciais vêm de variável de ambiente (ADMIN_USERNAME/ADMIN_PASSWORD);
+    os defaults ('admin' / 'admin123') servem só para rodar localmente —
+    troque em qualquer ambiente que não seja a sua própria máquina.
+    """
+    ja_existe = session.exec(select(AuthUser)).first()
+    if ja_existe:
+        return
+
+    admin = AuthUser(
+        username=settings.ADMIN_USERNAME,
+        hashed_password=hash_password(settings.ADMIN_PASSWORD),
+    )
+    session.add(admin)
     session.commit()

@@ -1,25 +1,22 @@
-# 📌 Users API — FastAPI + SQLModel + Pandas
+# Users API — FastAPI + SQLModel + Pandas
 
-API RESTful desenvolvida em **Python com FastAPI**, responsável pelo gerenciamento de usuários, contas, cartões e comunicações personalizadas **(news)**, com persistência real em banco relacional e endpoints de **analytics** para consumo por pipelines de ETL e ferramentas de BI.
+API REST em Python para gerenciar usuários, contas, cartões e notificações, com persistência real em banco relacional e uma camada de analytics em cima dos próprios dados.
 
-Este projeto atua como uma **camada de dados acessível via HTTP**, funcionando como **fonte central de informações** para aplicações externas e pipelines de dados.
+Comecei esse projeto no Bootcamp Santander (DIO) como um desafio de API simples com dados em memória. Depois resolvi evoluir para algo mais próximo do que se vê em produção: banco de dados de verdade, modelagem relacional, testes automatizados e um endpoint de análise de dados com Pandas —.
 
-## 🎯 Objetivo do Projeto
+## O que a API faz
 
-Demonstrar a construção de uma **API REST profissional**, com modelagem relacional, persistência real, e uma camada de análise de dados (Pandas) sobre a própria base — unindo desenvolvimento backend e análise de dados no mesmo projeto.
+- CRUD completo de usuários (GET, POST, PUT, PATCH, DELETE)
+- Autenticação via JWT — leitura é pública, escrita exige login
+- Paginação e filtro por nome na listagem
+- Modelagem relacional com chaves estrangeiras (não mais objetos soltos em memória)
+- Persistência em SQLite local / Postgres em produção
+- Analytics com Pandas: média, mediana, desvio padrão, distribuição por faixa de limite, contas negativas, correlação saldo×limite, ranking dos maiores/menores saldos
+- Exportação da base em CSV
+- Suíte de testes com pytest, banco isolado em memória
+- Dockerfile pronto pra build
 
-## 🚀 Funcionalidades
-
-- CRUD completo de usuários (**GET, POST, PUT, PATCH, DELETE**);
-- Paginação e filtro por nome na listagem;
-- Modelagem relacional real (chaves estrangeiras, relacionamentos 1:1 e 1:N) via SQLModel;
-- Persistência em banco (SQLite local / Postgres em produção via `DATABASE_URL`);
-- Endpoints de **analytics** com Pandas (estatísticas agregadas da base);
-- Exportação de dados em **CSV** para consumo em BI/Excel;
-- Documentação interativa via Swagger (OpenAPI);
-- Deploy em nuvem com URL pública.
-
-## 🧱 Modelagem de Domínio
+## Modelagem
 
 ```
 Usuario 1───1 Conta
@@ -28,128 +25,139 @@ Usuario 1───N Recurso
 Usuario 1───N News
 ```
 
-Cada entidade é uma tabela própria, relacionada por chave estrangeira — não mais um objeto único com listas aninhadas em memória.
+Cada uma dessas é uma tabela própria, ligada por chave estrangeira.
 
-## 🔌 Endpoints Principais
+## Endpoints
 
-| Método | Endpoint                    | Descrição                                   |
-| ------ | ---------------------------- | -------------------------------------------- |
-| GET    | `/usuario`                   | Lista usuários (paginação + filtro por nome) |
-| GET    | `/usuario/{id}`              | Retorna um usuário por ID                    |
-| POST   | `/usuario`                   | Cria um novo usuário                         |
-| PUT    | `/usuario/{id}`               | Atualiza o usuário completo                  |
-| PATCH  | `/usuario/{id}`               | Atualiza campos específicos do usuário       |
-| DELETE | `/usuario/{id}`               | Remove um usuário                            |
-| GET    | `/relatorios/estatisticas`    | Estatísticas agregadas da base (Pandas)      |
-| GET    | `/relatorios/usuarios.csv`    | Exporta a base em CSV                        |
+| Método | Endpoint                     | Autenticação | O que faz                                       |
+| ------- | ---------------------------- | :------------: | ----------------------------------------------- |
+| POST    | `/auth/login`              |       —       | Login (usuário + senha), retorna JWT           |
+| GET     | `/usuario`                 |    pública    | Lista usuários (paginação + filtro por nome) |
+| GET     | `/usuario/{id}`            |    pública    | Busca um usuário específico                   |
+| POST    | `/usuario`                 |       🔒       | Cria um usuário                                |
+| PUT     | `/usuario/{id}`            |       🔒       | Substitui o usuário inteiro                    |
+| PATCH   | `/usuario/{id}`            |       🔒       | Atualiza só os campos enviados                 |
+| DELETE  | `/usuario/{id}`            |       🔒       | Remove um usuário                              |
+| GET     | `/relatorios/estatisticas` |    pública    | Estatísticas agregadas (Pandas)                |
+| GET     | `/relatorios/top-usuarios` |    pública    | Ranking por saldo ou limite                     |
+| GET     | `/relatorios/usuarios.csv` |    pública    | Exporta a base em CSV                           |
 
-## 📃 Documentação (Swagger)
+🔒 = exige header `Authorization: Bearer <token>`, obtido em `/auth/login`.
 
-- 🔗 [https://usersapipython.up.railway.app/docs](https://usersapipython.up.railway.app/docs)
+Documentação interativa (Swagger) disponível em `/docs` assim que a API sobe. Os assets do Swagger UI ficam hospedados localmente (`app/static/swagger-ui`) em vez de vir de CDN — testando numa rede mais restrita percebi que a página ficava em branco quando o acesso à CDN externa era bloqueado, então resolvi servir os arquivos direto pela própria API. O Swagger também tem um botão "Authorize" que já usa esse mesmo login.
 
-## ☁️ Deploy em Produção
+## Autenticação
 
-Publicado no **Railway**. Em produção, defina a variável de ambiente `DATABASE_URL` apontando para um Postgres gerenciado (o projeto usa SQLite localmente por padrão, sem exigir configuração extra).
+Leitura (`GET`) é pública de propósito, pra facilitar avaliar o projeto sem precisar logar antes. Escrita exige token:
 
-## 🛠️ Tecnologias Utilizadas
+```bash
+# 1. login (usuário/senha de demonstração, ver abaixo)
+curl -X POST http://localhost:8000/auth/login -d "username=admin&password=admin123"
+# -> {"access_token": "...", "token_type": "bearer"}
 
-- Python
-- FastAPI
-- SQLModel (Pydantic + SQLAlchemy)
-- Pandas
-- Uvicorn
-- OpenAPI/Swagger
-- Railway (Deploy)
+# 2. usa o token nos endpoints de escrita
+curl -X DELETE http://localhost:8000/usuario/1 -H "Authorization: Bearer <token>"
+```
 
-## 🔄 Integração com Outros Projetos
+O usuário administrador (`admin` / `admin123` por padrão) é criado automaticamente no primeiro boot. Essas credenciais e a `SECRET_KEY` usada para assinar o token são só para rodar localmente sem configuração — em qualquer ambiente que não seja a sua própria máquina, defina `ADMIN_USERNAME`, `ADMIN_PASSWORD` e `SECRET_KEY` como variáveis de ambiente antes de subir.
 
-Esta API foi construída para ser consumida por **pipelines ETL**, onde:
-
-- Dados são extraídos via HTTP (`GET /usuario`, `GET /relatorios/usuarios.csv`);
-- Informações são enriquecidas externamente (ex.: geração de texto via LLM);
-- Atualizações são persistidas via API (`PUT`/`PATCH`);
-
-👉 O pipeline **ETL + IA** que consome esta API está disponível em um **repositório separado**.
-
-## ▶️ Execução Local
+## Rodando localmente
 
 ```bash
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Acesse:
+Acesse `http://127.0.0.1:8000/docs`. Na primeira execução o banco é criado e populado com 3 usuários de exemplo.
 
-```
-http://127.0.0.1:8000/docs
-```
-
-Na primeira execução, o banco (`database.db`) é criado automaticamente e populado com 3 usuários de exemplo.
-
-### 🌱 Popular com massa de dados (100 usuários sintéticos)
-
-Para testar paginação, filtros e os endpoints de analytics com volume real, é possível gerar 100 usuários sintéticos (dados brasileiros realistas via Faker):
+Se quiser testar com mais volume de dados (paginação, filtro, estatísticas fazendo mais sentido), dá pra gerar 100 usuários sintéticos com Faker:
 
 ```bash
 pip install -r requirements-dev.txt
 python -m scripts.seed_100
 ```
 
-O script é aditivo — pode ser executado mais de uma vez para acumular mais registros — e não remove os dados já existentes.
-
-## ✅ Testes Automatizados
-
-A suíte usa `pytest` com banco SQLite em memória isolado por teste (não toca no `database.db` real):
+## Testes
 
 ```bash
 pip install -r requirements-dev.txt
 pytest -v
 ```
 
-Cobertura atual: 15 testes, cobrindo CRUD completo (incluindo casos de 404), paginação, filtro por nome e os endpoints de analytics/CSV.
+26 testes cobrindo CRUD, autenticação (login válido/inválido, token ausente/expirado), casos de erro (404), paginação, filtro e os endpoints de relatório (incluindo o ranking). Rodam em banco SQLite em memória, isolado — não tocam no banco local.
 
-## 🐳 Docker
+## Docker
 
 ```bash
 docker build -t users-api .
 docker run -p 8000:8000 users-api
 ```
 
-Acesse `http://localhost:8000/docs`. Em produção, a variável `PORT` é injetada automaticamente pela plataforma de deploy (Railway, Render etc.).
+## Deploy
 
-## 🏛️ Arquitetura
+Publicado no Railway. Em produção, defina `DATABASE_URL` apontando pra um Postgres gerenciado — localmente ele cai em SQLite sem precisar configurar nada.
+
+## Estrutura do projeto
 
 ```
 app/
-├── main.py            # instancia o FastAPI, inclui routers, cria/popula o banco no startup
+├── main.py            # cria o FastAPI, registra os routers, popula o banco no startup
 ├── core/
-│   └── config.py       # configurações via variável de ambiente
+│   ├── config.py       # configuração via variável de ambiente
+│   ├── security.py     # hash de senha (bcrypt) e JWT
+│   └── deps.py          # dependency que valida o token nos endpoints protegidos
 ├── db/
-│   ├── database.py     # engine e sessão do banco
-│   └── seed.py         # dados de exemplo (idempotente)
+│   ├── database.py    # conexão com o banco
+│   ├── seed.py         # dados de exemplo + usuário admin padrão
+│   └── seed_bulk.py    # gerador de dados sintéticos (Faker)
 ├── models/
-│   └── usuario.py      # tabelas SQLModel + schemas de entrada/saída
-└── routers/
-    ├── usuario.py       # CRUD de usuários
-    └── relatorios.py    # analytics (Pandas) e export CSV
+│   ├── usuario.py       # tabelas e schemas de negócio
+│   └── auth.py           # tabela do usuário de login
+├── routers/
+│   ├── auth.py           # POST /auth/login
+│   ├── usuario.py       # CRUD
+│   └── relatorios.py    # analytics e CSV
+└── static/swagger-ui/   # assets do Swagger self-hosted (css/js), sem depender de CDN
+
+scripts/seed_100.py      # popula o banco com dados sintéticos
+tests/                    # suíte pytest
+Dockerfile
 ```
 
-### Visão Geral
-![Arquitetura da API](docs/diagramas/Arquitetura%20-%20Visão%20Geral.svg)
+## Sobre a arquitetura
 
-### Fluxo de Requisições
-![Fluxo de Requisições](docs/diagramas/Fluxo%20de%20Requisições.svg)
+Comecei com tudo num `main.py` só (dado fake em dicionário Python, sem persistência). Reestruturei em camadas — routers separados de modelos, modelos separados de acesso a banco — depois de perceber que isso ia ficar difícil de manter conforme eu fosse adicionando funcionalidade.
 
-> Os diagramas acima refletem a versão anterior (banco em memória) e serão atualizados para representar a camada de persistência e o router de relatórios.
+<div>
+<p align="center">
+  <img src="docs/diagramas/arquitetura_preview.png" alt="Arquitetura da API" style="border-radius: 12px;" width: 50%; />
+</p>
 
-## ⭐ Diferenciais Técnicos
+<p align="center">
+  <img src="docs/diagramas/fluxo_preview.png" alt="Fluxo de Requisições" style="border-radius: 12px;" width: 70%; />
+</p>
 
-- Modelagem relacional real, não objetos aninhados em memória
-- Persistência que sobrevive a redeploy
-- CRUD genuinamente completo (inclui PATCH e DELETE)
-- Camada de analytics com Pandas sobre os próprios dados da API
-- Separação clara em camadas (routers / models / db / core)
-- Suíte de testes automatizados (pytest) com banco isolado por teste
-- Containerizado com Docker, pronto para qualquer plataforma de deploy
-- Geração de massa de dados sintética para testes e demonstração
-- Testado ponta a ponta antes do deploy
+
+# Atualizações possíveis (Futuramente)
+
+- Autenticação por perfil (hoje é um único usuário admin — não tem controle por papel/permissão)
+- Endpoint de analytics com série temporal (hoje as tabelas não guardam data de criação, então não dá pra ver evolução no tempo)
+- Rate limiting nos endpoints públicos
+
+## Stack
+
+<p align="left">
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/SQLModel-E92063?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLModel" />
+  <img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white" alt="Pandas" />
+  <br/>
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite" />
+  <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT" />
+  <img src="https://img.shields.io/badge/Pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white" alt="Pytest" />
+  <br/>
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="Swagger" />
+  <img src="https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white" alt="Railway" />
+</p>

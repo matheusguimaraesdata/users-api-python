@@ -3,6 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
+from app.core.deps import get_current_username
 from app.db.database import get_session
 from app.models.usuario import (
     Cartao,
@@ -42,7 +43,11 @@ def obter_usuario(usuario_id: int, session: Session = Depends(get_session)):
 
 
 @router.post("", response_model=UsuarioRead, status_code=201)
-def criar_usuario(payload: UsuarioCreate, session: Session = Depends(get_session)):
+def criar_usuario(
+    payload: UsuarioCreate,
+    session: Session = Depends(get_session),
+    _username: str = Depends(get_current_username),
+):
     usuario = Usuario(
         nome=payload.nome,
         conta=Conta(**payload.conta.model_dump(exclude={"id"})),
@@ -58,7 +63,10 @@ def criar_usuario(payload: UsuarioCreate, session: Session = Depends(get_session
 
 @router.put("/{usuario_id}", response_model=UsuarioRead)
 def atualizar_usuario_completo(
-    usuario_id: int, payload: UsuarioCreate, session: Session = Depends(get_session)
+    usuario_id: int,
+    payload: UsuarioCreate,
+    session: Session = Depends(get_session),
+    _username: str = Depends(get_current_username),
 ):
     """Substitui o usuário inteiro (todos os campos são obrigatórios)."""
     usuario = session.get(Usuario, usuario_id)
@@ -79,7 +87,10 @@ def atualizar_usuario_completo(
 
 @router.patch("/{usuario_id}", response_model=UsuarioRead)
 def atualizar_usuario_parcial(
-    usuario_id: int, payload: UsuarioUpdate, session: Session = Depends(get_session)
+    usuario_id: int,
+    payload: UsuarioUpdate,
+    session: Session = Depends(get_session),
+    _username: str = Depends(get_current_username),
 ):
     """Atualiza só os campos enviados — não exige o objeto inteiro."""
     usuario = session.get(Usuario, usuario_id)
@@ -104,7 +115,11 @@ def atualizar_usuario_parcial(
 
 
 @router.delete("/{usuario_id}", status_code=204)
-def deletar_usuario(usuario_id: int, session: Session = Depends(get_session)):
+def deletar_usuario(
+    usuario_id: int,
+    session: Session = Depends(get_session),
+    _username: str = Depends(get_current_username),
+):
     usuario = session.get(Usuario, usuario_id)
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")

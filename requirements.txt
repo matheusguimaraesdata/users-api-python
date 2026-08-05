@@ -1,6 +1,9 @@
 fastapi
+aiofiles
 uvicorn
 pydantic
 sqlmodel
 pandas
-requests
+python-jose[cryptography]
+bcrypt
+python-multipart
