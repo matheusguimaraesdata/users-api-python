@@ -3,7 +3,9 @@ aiofiles
 uvicorn
 pydantic
 sqlmodel
+psycopg[binary]
 pandas
 python-jose[cryptography]
 bcrypt
 python-multipart
+python-dotenv
